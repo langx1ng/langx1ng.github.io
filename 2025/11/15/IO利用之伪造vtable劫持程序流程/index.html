@@ -136,9 +136,9 @@ document.addEventListener("pjax:complete", reset);reset()})</script><meta name="
 
 <p>下面用gdb调试一下看看怎么个事</p>
 <p>运行到14行，可以看见我们的vtabel_ptr已经变成了_IO_file_jumps的地址了</p>
-<p>![image-20251103212515224](C:&#x2F;Users&#x2F;28674&#x2F;Nutstore&#x2F;1&#x2F;我的坚果云&#x2F;周报笔记&#x2F;pwn&#x2F;&#x2F;图片&#x2F;IO利用之伪造 vtable 劫持程序流程.assets&#x2F;image-20251103212515224.png)</p>
+<p class='item-img' data-src='https://images.cnblogs.com/cnblogs_com/blogs/851403/galleries/2471304/o_251104091832_image-20251103212515224.png'><img src="https://images.cnblogs.com/cnblogs_com/blogs/851403/galleries/2471304/o_251104091832_image-20251103212515224.png" alt="image-20251103212515224"></p>
 <p>查房！里面的成员第八项就是我们的xsputn直接执行<code>vtable_ptr[7]=system_ptr </code></p>
-<p class='item-img' data-src='C:/Users/28674/Nutstore/1/我的坚果云/周报笔记/pwn/图片/image-20251103212901350.png'><img src="C:/Users/28674/Nutstore/1/我的坚果云/周报笔记/pwn/图片/image-20251103212901350.png" alt="image-20251103212901350"></p>
+<p class='item-img' data-src='https://images.cnblogs.com/cnblogs_com/blogs/851403/galleries/2471304/t_251104091833_image-20251103212901350.png'><img src="https://images.cnblogs.com/cnblogs_com/blogs/851403/galleries/2471304/t_251104091833_image-20251103212901350.png" alt="image-20251103212901350"></p>
 <p>按理来说我们是可以直接修改的但是</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash">pwndbg&gt; <br>Program received signal SIGSEGV, Segmentation fault.<br>0x00005555555551f0 <span class="hljs-keyword">in</span> main () at IO_vtable.c:16<br>16          vtable_ptr[7]=system_ptr //xsputn<br></code></pre></td></tr></table></figure>
 
