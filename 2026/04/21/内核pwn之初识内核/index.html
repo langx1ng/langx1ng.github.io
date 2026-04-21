@@ -1,0 +1,331 @@
+<!DOCTYPE html><html lang="zh-CN" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>内核Pwn之初识内核 | Sw0rd</title><link rel="icon" type="image/x-icon" href="/favicon.ico"><link rel="preload" as="font" crossorigin="anonymous" href="/font/Bender.ttf"><link rel="preload" as="font" crossorigin="anonymous" href="/font/BenderLight.woff2"><link rel="preload" as="font" crossorigin="anonymous" href="/font/JetBrainsMono-Regular.woff2"><link rel="stylesheet" href="/css/arknights.css"><style>@font-face {
+  font-family: Bender;
+  src: local('Bender'), url("/font/Bender.ttf"), url("/font/Bender.otf");
+}
+@font-face {
+  font-family: BenderLight;
+  src: local('BenderLight'), url("/font/BenderLight.woff2") format('woff2');
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}
+</style><meta name="page-config" content="{&quot;code_fold&quot;:null}"><script class="pjax-js">var config = {"root":"/","code_fold":15,"search":{"preload":false,"activeHolder":"键入以继续","blurHolder":"数据检索","noResult":"无 $0 相关数据"},"code":{"codeInfo":"$0 - $1 行","copy":"复制"}};
+var page_config = {
+  code_fold: null
+};
+function updatePageConfig() {
+  var newPageConfig = document.querySelector('meta[name="page-config"]');
+  if (newPageConfig) {
+    page_config = JSON.parse(newPageConfig.content);
+  }
+}
+document.addEventListener('pjax:complete', function() { updatePageConfig(); });
+updatePageConfig();</script><link type="text/css" rel="stylesheet" href="/lib/encrypt/hbe.style.css"><script src="//unpkg.com/mermaid@10.5.0/dist/mermaid.min.js"></script><script src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.6.1/MathJax.js"></script><script>MathJax.Hub.Config({
+ menuSettings: {
+   zoom: "None"
+ },
+ showMathMenu: false,
+ jax: ["input/TeX","output/CommonHTML"],
+ extensions: ["tex2jax.js"],
+ TeX: {
+   extensions: ["AMSmath.js","AMSsymbols.js"],
+   equationNumbers: {
+     autoNumber: "AMS"
+   }
+ },
+ tex2jax: {
+   inlineMath: [["\\(", "\\)"]],
+   displayMath: [["\\[", "\\]"]]
+ }
+});</script><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lightgallery.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-zoom.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-thumbnail.css"><link type="text/css" rel="stylesheet" href="/lib/fontawesome/css/all.min.css"><script>if (window.localStorage.getItem('theme-mode') === 'light')
+ document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark')
+ document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: BenderLight;
+ src: local('Bender'), url("/font/BenderLight.woff2") format('woff2');
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><style>:root {
+ --dark-background: url('/img/sui.jpg');
+ --light-background: url('/img/bk.jpg');
+ --theme-encrypt-confirm: '确认'
+}</style><script defer src="/js/arknights.js"></script><script defer src="/js/search.js"></script><script defer src="https://vercount.one/js"></script><script defer type="module">import mermaid from '//unpkg.com/mermaid@10.5.0/dist/mermaid.esm.mjs';
+window.mermaid = mermaid;
+code.paintMermaid();
+</script><script src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.6.1/MathJax.js"></script><script>MathJax.Hub.Config({
+  menuSettings: {
+    zoom: "None"
+  },
+  showMathMenu: false,
+  jax: ["input/TeX","output/CommonHTML"],
+  extensions: ["tex2jax.js"],
+  TeX: {
+    extensions: ["AMSmath.js","AMSsymbols.js"],
+    equationNumbers: {
+      autoNumber: "AMS"
+    }
+  },
+  tex2jax: {
+    inlineMath: [["\\(", "\\)"]],
+    displayMath: [["\\[", "\\]"]]
+  }
+});
+</script><script async src="//unpkg.com/lightgallery@2.7.1/lightgallery.min.js"></script><script async src="//unpkg.com/lightgallery@2.7.1/plugins/zoom/lg-zoom.min.js"></script><script async src="//unpkg.com/lightgallery@2.7.1/plugins/thumbnail/lg-thumbnail.min.js"></script><script async src="/lib/encrypt/hbe.js"></script><script async src="/js/pjax.js"></script><script class="pjax-js">reset= () => {document.querySelector('.lg-container')?.remove()
+lightGallery(document.getElementById('post-bg'), {
+  plugins: [lgZoom,lgThumbnail],
+  selector: '.item-img'})}</script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js','data-pjax','.vercount','meta[name=page-config]'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);document.addEventListener('pjax:success', _ => {
+ const script = document.createElement('script');
+ script.src = 'https://vercount.one/js';
+ document.head.appendChild(script);
+});reset()})</script><script class="pjax-js">reset= () => {MathJax.Hub.Queue(["Typeset", MathJax.Hub]);document.querySelector('.lg-container')?.remove()
+const postBg = document.querySelector('#post-bg');
+if (postBg) lightGallery(postBg, {
+  plugins: [lgZoom,lgThumbnail],
+  selector: '.item-img'})}</script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js','data-pjax','.vercount','meta[name=page-config]'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);document.addEventListener('pjax:success', _ => {
+ const script = document.createElement('script');
+ script.src = 'https://vercount.one/js';
+ document.head.appendChild(script);
+});reset()})</script><meta name="generator" content="Hexo 8.1.1"></head><body><div class="loading" style="opacity: 0;"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><div class="navBtn"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><nav><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="数据检索" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup" tabindex="0"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">主页</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">归档页</span></a></li><li class="navItem"><a class="navBlock" href="/about/"><span class="navItemTitle">关于我</span></a></li><li class="navItem"><a class="navBlock" href="/%E8%81%94%E7%B3%BB%E6%96%B9%E5%BC%8F/"><span class="navItemTitle">联系方式</span></a></li><li class="navItem"><a class="navBlock" href="/links/"><span class="navItemTitle">友链</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>内核Pwn之初识内核</h1><div id="post-info"><span>文章发布时间: <div class="control"><time datetime="2026-04-21T15:39:59.608Z" id="date"> 2026-04-21</time></div></span><br><span>最后更新时间: <div class="control"><time datetime="2026-04-21T15:47:26.699Z" id="updated"> 2026-04-21</time></div></span><br><span id="vercount_container_page_pv">页面浏览: <span class="control" id="vercount_value_page_pv">加载中...</span></span></div></div><hr><div id="post-content"><h1 id="内核pwn之初识内核"><a href="#内核pwn之初识内核" class="headerlink" title="内核pwn之初识内核"></a>内核pwn之初识内核</h1><p><strong>过渡</strong></p>
+<p>还记得我们在用户态 pwn 中，最终的目标是劫持程序的控制流，执行 <code>system(&quot;/bin/sh&quot;)</code> 来获得一个 shell。这个 shell 的权限通常和运行该程序的用户一样。</p>
+<p>但在内核 pwn 中，情况不同了。我们的目标是利用内核或内核模块中的漏洞，将我们普通用户的权限<strong>提升为 root 权限</strong>。这通常被称为本地权限提升 (Local Privilege Escalation, LPE)简称提权</p>
+<h3 id="前置知识"><a href="#前置知识" class="headerlink" title="前置知识"></a>前置知识</h3><p>在学习内核pwn之前先来看看内核相关概念</p>
+<h6 id="操作系统内核"><a href="#操作系统内核" class="headerlink" title="操作系统内核"></a>操作系统内核</h6><blockquote>
+<p>简介:</p>
+<p>操作系统内核（Operation System Kernel）本质上也是一种软件，可以看作是普通应用程式与硬件之间的一层中间层，其主要作用便是调度系统资源、控制 IO 设备、操作网络与文件系统等，并为上层应用提供便捷、抽象的应用接口。</p>
+</blockquote>
+<p>既然操作系统内核本质上是软件，且绝大多数是用 <strong>C 语言</strong>和少量汇编写的，那么所有在用户态（User-space）存在的漏洞，在内核态（Kernel-space）都可能存在！</p>
+<p>操作系统内核与用户进程本质上并无差异，都为代码+数据，不同之处在于当CPU执行不同进程代码时的权限不同，内核态运行代码是高权限，有着完全的硬件访问能力，用户态运行代码是低权限，只有部分硬件访问能力。</p>
+<p>这两种不同的状态是基于硬件来实现的</p>
+<h6 id="Rings"><a href="#Rings" class="headerlink" title="Rings"></a><strong>Rings</strong></h6><p>分级保护域<code>hierarchical protection domains</code>，别名保护环，简称为Rings。</p>
+<p>简单来讲分级保护域是<strong>由 CPU 硬件（芯片）直接提供的一种安全机制</strong>。CPU 将系统的运行状态划分成不同的特权级别。级别越高的代码，能执行的指令越多，能访问的内存范围越大。</p>
+<p>在经典的 Intel x86 架构中，硬件提供了 4 个特权级别：<strong>Ring 0, Ring 1, Ring 2, Ring 3</strong>。数字越小，权限越高。</p>
+<p>一般来说我们只会使用Ring0 和 Ring3 对应操作系统内核和用户进程</p>
+<p class='item-img' data-src='https://ctf-wiki.org/pwn/linux/kernel-mode/figure/ring_model.png'><img src="https://ctf-wiki.org/pwn/linux/kernel-mode/figure/ring_model.png" alt="Ring Model"></p>
+<p>用户态和内核态的区别简单讲：</p>
+<ul>
+<li>用户态：CPU 运行在 ring3 + 用户进程运行环境上下文。</li>
+<li>内核态：CPU 运行在 ring0 + 内核代码运行环境上下文。</li>
+</ul>
+<h3 id="状态切换"><a href="#状态切换" class="headerlink" title="状态切换"></a>状态切换</h3><p>CPU进行状态切换一般就是这几个方法：</p>
+<ol>
+<li><p>特权级相关指令：当 CPU 运行这些指令时会发生运行状态的改变，例如 iret 指令（ring0-&gt;ring3）或是 sysenter 指令（ring3-&gt;ring0）。</p>
+<blockquote>
+<p>注意：</p>
+<p>ring3-&gt;ring0 并不是只能通过系统调用来切换比如以下的硬件中断和异常</p>
+</blockquote>
+</li>
+<li><p><strong>硬件中断（Hardware Interrupts）</strong>：网卡收到数据了、键盘被按下了，硬件发信号给 CPU，CPU 暂停当前 Ring 3 的工作，切到 Ring 0 去处理。</p>
+</li>
+<li><p><strong>异常（Exceptions）</strong>：比如 Ring 3 程序触发了缺页异常（Page Fault），CPU 自动切入 Ring 0 去分配内存。</p>
+</li>
+</ol>
+<blockquote>
+<figure class="highlight tex"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs tex">&gt;基于这些特权级切换的方式，现代操作系统的开发者包装出了系统调用（syscall），作为由 “用户态” 切换到 “内核态” 的入口，从而执行内核代码来完成用户进程所需的一些功能。当用户进程想要请求更高权限的服务时，便需要通过由系统提供的应用接口，使用系统调用以陷入内核态，再由操作系统完成请求。<br></code></pre></td></tr></table></figure></blockquote>
+<p><strong>思考</strong>：</p>
+<p>通过了解状态切换，可以知道一些内核pwn中的套路就是利用ioctl()函数(一个基于syscall的函数)带着payload进入 ring0 内核态，然后在内核态中触发漏洞提权，最后利用特权级指令返回 ring3 用户态</p>
+<h6 id="user-space-to-kernel-space-（系统调用）"><a href="#user-space-to-kernel-space-（系统调用）" class="headerlink" title="user space to kernel space （系统调用）"></a>user space to kernel space （系统调用）</h6><p>系统调用是内核和用户通信的直接接口。</p>
+<p>我们主要关注比较常用的系统调用即可</p>
+<p>具体过程：当系统调用指令执行后，CPU便进入内核态，然后在内核态下完成一系列操作</p>
+<p>1.<strong>换上内核的“工作服”:</strong></p>
+<ul>
+<li><p>第一步执行swapgs指令，这一步是雷打不动的，通过 <code>swapgs</code> 切换 GS 段寄存器，将 GS 寄存器值和一个特定位置(<strong>MSR_KERNEL_GS_BASE</strong>)的值进行交换，目的是保存 GS 值，同时将该位置的值作为内核执行时的 GS 值使用。（这里浅浅说一下这个GS与多核隔离有关）</p>
+</li>
+<li><p>切换到内核栈：当CPU刚切换到ring0时内核为了安全起见，会将栈指针从用户态栈强行指向当前进程专属的内核栈(kernel stack)</p>
+</li>
+<li><p>保存寄存器：完成上一步后，内核会进行一系列的压栈，它会将用户态的rdi、rsi、rdx、rcx、r8、r9等所有通用寄存器，以及<strong>RIP,CS,EFLAGS</strong>全部压入当前的内核栈中。而这些压入的数据被称为pt_regs结构体</p>
+</li>
+<li><p>源码如下：</p>
+</li>
+</ul>
+ <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><code class="hljs assembly">ENTRY(entry_SYSCALL_64)<br>  /* SWAPGS_UNSAFE_STACK是一个宏，x86直接定义为swapgs指令 */<br>  SWAPGS_UNSAFE_STACK<br>   <br>  /* 保存栈值，并设置内核栈 */<br>  movq %rsp, PER_CPU_VAR(rsp_scratch)<br>  movq PER_CPU_VAR(cpu_current_top_of_stack), %rsp<br><br><br> /* 通过push保存寄存器值，形成一个pt_regs结构 */<br> /* Construct struct pt_regs on stack */<br> pushq  $__USER_DS      /* pt_regs-&gt;ss */<br> pushq  PER_CPU_VAR(rsp_scratch)  /* pt_regs-&gt;sp */<br> pushq  %r11             /* pt_regs-&gt;flags */<br> pushq  $__USER_CS      /* pt_regs-&gt;cs */<br> pushq  %rcx             /* pt_regs-&gt;ip */<br> pushq  %rax             /* pt_regs-&gt;orig_ax */<br> pushq  %rdi             /* pt_regs-&gt;di */<br> pushq  %rsi             /* pt_regs-&gt;si */<br> pushq  %rdx             /* pt_regs-&gt;dx */<br> pushq  %rcx tuichu    /* pt_regs-&gt;cx */<br> pushq  $-ENOSYS        /* pt_regs-&gt;ax */<br> pushq  %r8              /* pt_regs-&gt;r8 */<br> pushq  %r9              /* pt_regs-&gt;r9 */<br> pushq  %r10             /* pt_regs-&gt;r10 */<br> pushq  %r11             /* pt_regs-&gt;r11 */<br> sub $(6*8), %rsp      /* pt_regs-&gt;bp, bx, r12-15 not saved */<br></code></pre></td></tr></table></figure>
+
+<p>2.<strong>安检阶段</strong>：</p>
+<ul>
+<li><strong>判断 x32_abi</strong>：<ul>
+<li>内核代码会检查 rax 系统调用号的第 30 位。如果是 x32，内核会跳转到另一套处理逻辑（使用 32 位的指针转换规则）。</li>
+</ul>
+</li>
+<li><strong>边界检查</strong>：<ul>
+<li>将 rax 与 NR_syscalls（系统支持的最大系统调用号）进行比较，防止恶意调用号导致 sys_call_table 越界读取。</li>
+</ul>
+</li>
+<li><strong>查找 sys_call_table</strong>：<ul>
+<li>一旦校验通过，内核会计算 sys_call_table + rax * 8 的地址。</li>
+<li>执行 call（或通过 Retpoline 机制跳转），跳进该地址指向的内核 C 函数（如 sys_read）。</li>
+</ul>
+</li>
+</ul>
+<p>3.<strong>参数校验与数据拷贝</strong>：</p>
+<ul>
+<li><strong>地址空间检查</strong>：内核必须检查你传进来的 buf 内存地址是不是真的在 Ring 3 的范围内。如果这个指针指向内核空间，内核必须拒绝访问。</li>
+<li><strong>copy_from_user</strong>：因为内核开启了 SMAP 保护（不能直接读 Ring 3 内存），内核必须调用这个专门的函数，把你 buf 里的 100 字节数据，<strong>安全地拷贝到内核态的一块内存中</strong>，然后再去处理。</li>
+</ul>
+<p>4.**业务执行：**这一步就是直接执行题目给的漏洞驱动.ko文件里的业务逻辑</p>
+<p>5.<strong>结果回传：</strong></p>
+<p><strong>copy_to_user</strong>：内核再次调用这个安全函数，把内核里准备好的数据，拷贝回你当时提供的用户态内存里。</p>
+<blockquote>
+<p>如果内核没有正确清空它的临时缓冲区，就把数据 copy_to_user 给了你，就会导致<strong>内核信息泄露（Info Leak）</strong>！我们就能在用户态拿到属于内核的堆地址或代码地址，从而绕过 KASLR（内核地址随机化）</p>
+</blockquote>
+<h6 id="kernel-space-to-user-space"><a href="#kernel-space-to-user-space" class="headerlink" title="kernel space to user space"></a>kernel space to user space</h6><p>退出时，流程如下：</p>
+<ol>
+<li>通过 <code>swapgs</code> 恢复 GS 值。</li>
+<li>通过 <code>sysretq</code>(它只能回到 rcx 寄存器指定的地址，并将 r11 恢复为 rflags。它<strong>不从栈上弹数据</strong>) 或者 <code>iretq</code> 恢复到用户控件继续执行。如果使用 <code>iretq</code> 还需要给出用户空间的一些信息（CS, eflags&#x2F;rflags, esp&#x2F;rsp 等）。</li>
+</ol>
+<p>在攻击中开启了KPTI(<strong>内核页表隔离</strong>)的话，还需要一些额外的步骤</p>
+<h3 id="进程权限管理"><a href="#进程权限管理" class="headerlink" title="进程权限管理"></a>进程权限管理</h3><h6 id="进程描述符"><a href="#进程描述符" class="headerlink" title="进程描述符"></a>进程描述符</h6><p>在linux内核中，进程和线程都被统一抽象为”任务”，由结构体<code>task_struct</code>完整描述。它包含了内核管理进程所需的一切信息：内存空间、打开的文件、信号、寄存器状态以及<strong>权限凭证</strong></p class='item-img' data-src='./图片/deepseek_mermaid_20260412_e9cd24.png'><img src="./图片/deepseek_mermaid_20260412_e9cd24.png" alt="deepseek_mermaid_20260412_e9cd24" style="zoom:67%;" />
+
+<p>这里，我们可以重点关注以下几点：</p>
+<ul>
+<li><strong>进程标识符 (pid&#x2F;tgid)</strong>：<code>pid</code>是内核级线程ID，而我们常说的进程ID其实是<code>tgid</code>（线程组ID）。在单线程程序中，两者数值相等。</li>
+<li><strong>进程名 (comm)</strong>：一个16字节的字符数组，保存了进程的名字。它在利用中常被用作“锚点”，帮助我们定位到进程描述符在内存中的地址。</li>
+<li><strong>权限指针 (real_cred &amp; cred)</strong>：这是内核pwn利用中的关键。它们是两个指向<code>cred</code>结构体的指针。</li>
+</ul>
+<p>一个进程描述符的结构应当如下图所示：<img src="/./%E5%9B%BE%E7%89%87/task_struct.png" alt="task_struct"></p>
+<h6 id="进程权限凭证（credential）"><a href="#进程权限凭证（credential）" class="headerlink" title="进程权限凭证（credential）"></a>进程权限凭证（credential）</h6><p>在<code>task_struct</code>保存了一个指向<code>cred</code>结构体的指针</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">task_struct</span> &#123;</span><br>    <span class="hljs-comment">// ...</span><br>    <span class="hljs-type">const</span> <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">cred</span> __<span class="hljs-title">rcu</span> *<span class="hljs-title">real_cred</span>;</span>  <span class="hljs-comment">// 指向真正的凭证</span><br>    <span class="hljs-type">const</span> <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">cred</span> __<span class="hljs-title">rcu</span> *<span class="hljs-title">cred</span>;</span>       <span class="hljs-comment">// 当前生效的凭证（通常与 real_cred 相同）</span><br>    <span class="hljs-comment">// ...</span><br>&#125;;<br></code></pre></td></tr></table></figure>
+
+<p><strong>cred</strong></p>
+<p>Linux的权限管理并不是简单的“Root与非Root”，而是细粒度的权限控制机制。这些信息存储在 <code>struct cred</code> 中。</p>
+<p>结构体cred用以管理一个进程的权限，该结构体定义于内核源码 <code>include/linux/cred.h</code> 中，如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">cred</span> &#123;</span><br>    <span class="hljs-type">atomic_t</span>    usage;<br>    <span class="hljs-type">kuid_t</span>      uid, gid;      <span class="hljs-comment">// 实际用户/组ID (谁启动的进程)</span><br>    <span class="hljs-type">kuid_t</span>      euid, egid;    <span class="hljs-comment">// 有效用户/组ID (内核进行权限检查时看的ID)</span><br>    <span class="hljs-type">kuid_t</span>      fsuid, fsgid;  <span class="hljs-comment">// 文件系统用户/组ID (访问文件系统时看的ID)</span><br>    <span class="hljs-comment">// ... 省略其他 ...</span><br>    <span class="hljs-type">kernel_cap_t</span>    cap_inheritable; <span class="hljs-comment">// 可继承的capabilities</span><br>    <span class="hljs-type">kernel_cap_t</span>    cap_permitted;   <span class="hljs-comment">// 允许的capabilities</span><br>    <span class="hljs-type">kernel_cap_t</span>    cap_effective;   <span class="hljs-comment">// 有效的capabilities</span><br>    <span class="hljs-comment">// ... 省略安全模块(SELinux)等 ...</span><br>    <span class="hljs-type">unsigned</span> <span class="hljs-type">int</span>    securebits;      <span class="hljs-comment">// SUID相关的安全位</span><br>&#125;;<br></code></pre></td></tr></table></figure>
+
+<p>一个 cred 结构体中记载了一个进程四种不同的用户 ID，在通常情况下这几个 ID 应当都是相同的：</p>
+<ul>
+<li>真实用户 ID（real UID）：标识一个进程启动时的用户 ID</li>
+<li>保存用户 ID（saved UID）：标识一个进程最初的有效用户 ID</li>
+<li>有效用户 ID（effective UID）：标识一个进程正在运行时所属的用户 ID，一个进程在运行途中是可以改变自己所属用户的，因而权限机制也是通过有效用户 ID 进行认证的，内核通过 euid 来进行特权判断；为了防止用户一直使用高权限，当任务完成之后，euid 会与 suid 进行交换，恢复进程的有效权限</li>
+<li>文件系统用户 ID（UID for VFS ops）：标识一个进程创建文件时进行标识的用户 ID</li>
+</ul>
+<p>用户组ID与用户ID类似。</p>
+<p><strong>UID 与 EUID</strong></p>
+<ul>
+<li><strong>UID</strong>：真实的用户ID。比如你以普通用户运行 <code>su</code>，此时 UID 仍然是普通用户。</li>
+<li><strong>EUID</strong>：有效用户ID。<strong>内核进行权限判定时，主要看 EUID！</strong> <code>su</code> 命令设置了 Set-UID 位，执行时 EUID 会变成 root (0)。所以内核认为它有 root 权限。</li>
+</ul>
+<p><strong>提权的本质</strong>：将当前进程的 <code>cred</code> 结构体中的 <code>uid</code>, <code>gid</code>, <code>euid</code>, <code>egid</code>, <code>fsuid</code>, <code>fsgid</code> 全部修改为 <code>0</code>。</p>
+<p><strong>Capabilities (能力机制)</strong></p>
+<p>现代 Linux 内核不再盲目信任 UID&#x3D;0，而是将 Root 权限拆分成了几十种具体的 Capabilities（如 <code>CAP_SYS_ADMIN</code>, <code>CAP_NET_RAW</code> 等）。</p>
+<ul>
+<li>即使 UID&#x3D;0，如果没有对应的 Capability，依然无法执行特定的内核操作。</li>
+<li><code>cap_effective</code> 是一个位图，标识当前进程当前生效的能力。</li>
+<li>在内核 Pwn 中，最完美的提权不仅是将 UID 置 0，还需要将 <code>cap_effective</code> 置为全 1（即 <code>0xFFFFFFFFFFFFFFFF</code>），这通常通过赋值 <code>init_cred</code> 或调用专用内核函数来实现。</li>
+</ul>
+<p><strong><code>cred</code> 与 <code>real_cred</code></strong></p>
+<ul>
+<li><code>real_cred</code>：客观凭证，代表“我真正是谁”。通常在进程启动时设置，一般不参与直接的权限判定，而是用于信号传递等场景。</li>
+<li><code>cred</code>：主观凭证，代表“我目前以什么身份行事”。内核进行权限检查（如 <code>capable()</code>, <code>ns_capable()</code>）时，检查的都是 <code>cred</code>。</li>
+<li><strong>Pwn 注意事项</strong>：在进行内存覆写提权时，最安全的做法是将 <code>cred</code> 和 <code>real_cred</code> <strong>同时</strong>改掉，否则某些安全检查可能会发现身份不一致而报错。</li>
+</ul>
+<h3 id="进程权限改变"><a href="#进程权限改变" class="headerlink" title="进程权限改变"></a>进程权限改变</h3><p>前面我们讲到，一个进程的权限是由位于内核空间的 <code>cred</code> 结构体进行管理的，那么我们不难想到：只要改变一个进程的 <code>cred</code> 结构体，就能改变其执行权限。</p>
+<p><strong>两个关键函数</strong></p>
+<p>在内核空间有如下两个函数，都位于 <code>kernel/cred.c</code> 中：</p>
+<table>
+<thead>
+<tr>
+<th align="left">函数</th>
+<th align="left">作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong><code>prepare_kernel_cred(daemon)</code></strong></td>
+<td align="left">复制一个进程的 <code>cred</code> 结构体并返回。<strong>特别地</strong>： • 若参数为 <code>NULL</code>，则返回一个全新的 <strong>root 权限</strong> <code>cred</code>。</td>
+</tr>
+<tr>
+<td align="left"><strong><code>commit_creds(new)</code></strong></td>
+<td align="left">将新 <code>cred</code> 指针写入当前进程的 <code>task_struct</code>，使其权限立即生效。</td>
+</tr>
+</tbody></table>
+<p>在内核 ROP 攻击中，执行以下逻辑即可完成提权：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs c">commit_creds(prepare_kernel_cred(<span class="hljs-literal">NULL</span>));<br></code></pre></td></tr></table></figure>
+
+<p>这条链路的含义是：<strong>创建一个 root 身份的凭证，然后安装到当前进程身上</strong>。执行完毕后，当前进程的 <code>euid</code> 变为 0，拥有超级用户权限。</p>
+<h6 id="Loadable-Kernel-Module（可加载内核模块）-LKMS"><a href="#Loadable-Kernel-Module（可加载内核模块）-LKMS" class="headerlink" title="Loadable Kernel Module（可加载内核模块）-&gt;LKMS"></a><strong>Loadable Kernel Module（可加载内核模块）</strong>-&gt;LKMS</h6><p><em><strong>LKM是什么？</strong></em></p>
+<ul>
+<li><p>本质：编译为.ko文件的内核态代码，可以在运行时动态插入&#x2F;卸载，无需重新编译或者重启内核。</p>
+</li>
+<li><p>常见用途：设备驱动、文件系统、网络协议栈、安全模块</p>
+</li>
+<li><p>加载流程：</p>
+</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">用户态: insmod / modprobe → sys_init_module() → 内核分配内存 → 解析 ELF → 重定位 → 执行 module_init()<br>卸载流程: rmmod → sys_delete_module() → 执行 module_exit() → 释放资源<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>权限要求</strong>：默认需要 <code>CAP_SYS_MODULE</code>，但 CTF 题通常通过 <code>/dev/xxx</code> 字符设备或开放 <code>sys_init_module</code> 降低门槛</li>
+</ul>
+<p>LKMs 的文件格式和用户态的可执行程序相同，Linux 下为 ELF，Windows 下为 exe&#x2F;dll，mac 下为 MACH-O，因此我们可以用 IDA 等工具来分析内核模块。</p>
+<p>模块可以被单独编译，但不能单独运行。它在运行时被链接到内核作为内核的一部分在内核空间运行，这与运行在用户控件的进程不同。</p>
+<p>模块通常用来实现一种文件系统、一个驱动程序或者其他内核上层的功能。</p>
+<h3 id="内核交互"><a href="#内核交互" class="headerlink" title="内核交互"></a>内核交互</h3><p>用户态想与内核进行交互一般是用系统调用</p>
+<h6 id="系统调用"><a href="#系统调用" class="headerlink" title="系统调用"></a>系统调用</h6><p>系统调用，指的是用户空间的程序向操作系统内核请求需要更高权限的服务，比如 IO 操作或者进程间通信。系统调用提供用户程序与操作系统间的接口，部分库函数（如 scanf，puts 等 IO 相关的函数实际上是对系统调用的封装（read 和 write））。</p>
+<h6 id="ioctl"><a href="#ioctl" class="headerlink" title="ioctl"></a>ioctl</h6><p>在 <code>*NIX</code> 中一切都可以被视为文件，因而一切都可以以访问文件的方式进行操作，为了方便，Linux 定义了系统调用 <code>ioctl</code> 供进程与设备之间进行通信。</p>
+<p>函数原型:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs C"><span class="hljs-type">int</span> <span class="hljs-title function_">ioctl</span><span class="hljs-params">(<span class="hljs-type">int</span> fd, <span class="hljs-type">unsigned</span> <span class="hljs-type">long</span> request, ...)</span>;<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>fd (File Descriptor)</strong>：文件描述符。告诉内核你要跟哪个设备对话（比如你刚才 open(“&#x2F;dev&#x2F;vuln”) 得到的返回值）。</li>
+<li><strong>request (也就是 CMD)</strong>：控制命令码。告诉设备你想干什么（比如 1 代表开灯，2 代表关灯）。</li>
+<li><strong>… (也就是 Arg)</strong>：<strong>Payload 的载体！</strong> 这是一个没有任何类型限制的参数。你可以传一个整数，也可以传一个指向极其复杂的嵌套结构体的指针。</li>
+</ul>
+<blockquote>
+<p>使用 ioctl 进行通信的原因：</p>
+<p>操作系统提供了内核访问标准外部设备的系统调用，因为大多数硬件设备只能够在内核空间内直接寻址, 但是当访问非标准硬件设备这些系统调用显得不合适, 有时候用户模式可能需要直接访问设备。</p>
+<p>比如，一个系统管理员可能要修改网卡的配置。现代操作系统提供了各种各样设备的支持，有一些设备可能没有被内核设计者考虑到，如此一来提供一个这样的系统调用来使用设备就变得不可能了。</p>
+<p>为了解决这个问题，内核被设计成可扩展的，可以加入一个称为设备驱动的模块，驱动的代码允许在内核空间运行而且可以对设备直接寻址。一个 Ioctl 接口是一个独立的系统调用，通过它用户空间可以跟设备驱动沟通。对设备驱动的请求是一个以设备和请求号码为参数的 Ioctl 调用，如此内核就允许用户空间访问设备驱动进而访问设备而不需要了解具体的设备细节，同时也不需要一大堆针对不同设备的系统调用。</p>
+</blockquote>
+<h3 id="常见内核态函数"><a href="#常见内核态函数" class="headerlink" title="常见内核态函数"></a>常见内核态函数</h3><p><code>printk</code>：用于在内核空间中打印调试信息或状态信息，通过<code>dmesg</code>查看调试信息。</p>
+<p><code>copy_from_user()</code>：用户空间的数据拷贝到内核空间。</p>
+<p><code>copy_to_user()</code>：内核空间的数据拷贝到用户空间。</p>
+<p><code>kmalloc()</code>，内核态的内存分配函数，和 malloc() 相似，但使用的是 <code>slab/slub</code> 分配器。</p>
+<p><code>kfree()</code>，同 <code>kmalloc</code>。</p>
+<p>此外，<code>kernel 管理进程，因此 kernel 也记录了进程的权限</code>。kernel 中有两个可以方便的改变权限的函数：</p>
+<ul>
+<li><strong>int commit_creds(struct cred *new)</strong></li>
+<li><strong>struct cred* prepare_kernel_cred(struct task_struct* daemon)</strong></li>
+</ul>
+<p>从函数名也可以看出，执行 <code>commit_creds(prepare_kernel_cred(&amp;init_task))</code> 即可获得 root 权限，即拷贝 init 进程的 cred 作为当前进程的新的 credentials。</p>
+<p>执行 <code>commit_creds(prepare_kernel_cred(&amp;init_task))</code> 也是最常用的提权手段，这些函数与变量的地址都可以在 <code>/proc/kallsyms</code> 中查看（较老的内核版本中是 <code>/proc/ksyms</code>），该文件的内容通常需要 root 权限才能正确查看。</p>
+<h3 id="内核pwn中相关文件"><a href="#内核pwn中相关文件" class="headerlink" title="内核pwn中相关文件"></a>内核pwn中相关文件</h3><ul>
+<li><p>run.sh&#x2F;start.sh：一个用于启动kernel的shell脚本，多使用qemu，保护措施与qemu不同的启动参数有关，因此我们可以通过阅读该脚本来了解题目所开保护</p>
+</li>
+<li><p>bzImage：压缩的内核二进制文件，可以通过<code>extract-vmlinux bzImage &gt; vmlinux</code>这个命令来提取出<code>vmlinux</code></p>
+</li>
+<li><p><code>vmlinux</code> ：解压后的未压缩 ELF 内核镜像，可用来调试内核模块和获取gadget</p>
+</li>
+<li><p>rootfs.cpio: 文件系统映像</p>
+</li>
+</ul>
+<h3 id="远程通用脚本："><a href="#远程通用脚本：" class="headerlink" title="远程通用脚本："></a>远程通用脚本：</h3><p>内核pwn打远程的话就是把我们编译的exp文件传输到远程，然后直接在远程运行exp，一般使用base64编码压缩大小后传输，想要进一步加速传输速度可以使用musl-c来编译exp.c</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br><span class="hljs-keyword">import</span> base64<br><span class="hljs-comment">#context.log_level = &quot;debug&quot;</span><br><br><span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(<span class="hljs-string">&quot;./exp&quot;</span>, <span class="hljs-string">&quot;rb&quot;</span>) <span class="hljs-keyword">as</span> f:<br>    exp = base64.b64encode(f.read())<br><br>p = remote(<span class="hljs-string">&quot;127.0.0.1&quot;</span>, <span class="hljs-number">11451</span>)<br><span class="hljs-comment">#p = process(&#x27;./run.sh&#x27;)</span><br>p.sendline()<br>p.recvuntil(<span class="hljs-string">&quot;/ $&quot;</span>)<br><br>count = <span class="hljs-number">0</span><br><span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">0</span>, <span class="hljs-built_in">len</span>(exp), <span class="hljs-number">0x200</span>):<br>    p.sendline(<span class="hljs-string">&quot;echo -n \&quot;&quot;</span> + exp[i:i + <span class="hljs-number">0x200</span>].decode() + <span class="hljs-string">&quot;\&quot; &gt;&gt; /tmp/b64_exp&quot;</span>)<br>    count += <span class="hljs-number">1</span><br>    log.info(<span class="hljs-string">&quot;count: &quot;</span> + <span class="hljs-built_in">str</span>(count))<br><br><span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(count):<br>    p.recvuntil(<span class="hljs-string">&quot;/ $&quot;</span>)<br><br>p.sendline(<span class="hljs-string">&quot;cat /tmp/b64_exp | base64 -d &gt; /tmp/exploit&quot;</span>)<br>p.sendline(<span class="hljs-string">&quot;chmod +x /tmp/exploit&quot;</span>)<br>p.sendline(<span class="hljs-string">&quot;/tmp/exploit &quot;</span>)<br><br>p.interactive()<br></code></pre></td></tr></table></figure>
+
+<div id="paginator"></div></div><div id="post-footer"><div id="pages" style="justify-content: flex-end"><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2026/04/11/%E7%BB%88%E7%AB%AF%E7%BE%8E%E5%8C%96%E7%9A%84%E6%9E%81%E8%87%B4%E6%8A%98%E8%85%BE%EF%BC%9A%E5%BD%BB%E5%BA%95%E8%A7%A3%E5%86%B3%20Fastfetch%20%E8%87%AA%E5%90%AF%E5%8A%A8%E5%9B%BE%E5%83%8F%E6%B8%B2%E6%9F%93%E5%86%B2%E7%AA%81/">终端美化的极致折腾：彻底解决 Fastfetch 自启动图像渲染冲突 上一篇 →</a></div></div></div></div><div class="bottom-btn"><div><a class="i-top" id="to-top" onClick="scrolls.scrolltop();" title="回到顶部" style="opacity: 0; display: none;">∧ </a><a class="i-index" id="to-index" href="#toc-div" title="文章目录">≡</a><a class="i-color" id="color-mode" onClick="colorMode.change()" title="切换主题"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="https://ak.hypergryph.com/assets/index/images/ak/pc/faction/1.png" alt="Logo" style="margin:0;border-radius:0;"></a><h1 id="Dr"><a href="/">Sw0rd</a></h1><div id="description"><p>this world is pretty</p></div><div id="social-links"><a class="social" target="_blank" rel="noopener" href="https://github.com/langx1ng"><i class="fab fa-github" alt="GitHub"></i></a><a class="social" href="mailto:2867485668@qq.com"><i class="fa fa-envelope" alt="E-Mail"></i></a><a class="social" target="_blank" rel="noopener" href="https://wpa.qq.com/msgrd?v=3&amp;uin=2867485668&amp;site=qq&amp;menu=yes"><i class="fa-brands fa-qq" alt="QQ"></i></a></div></div><div id="aside-block"><div id="toc-div"><h1>目录</h1><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%86%85%E6%A0%B8pwn%E4%B9%8B%E5%88%9D%E8%AF%86%E5%86%85%E6%A0%B8"><span class="toc-number">1.</span> <span class="toc-text">内核pwn之初识内核</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%89%8D%E7%BD%AE%E7%9F%A5%E8%AF%86"><span class="toc-number">1.1.</span> <span class="toc-text">前置知识</span></a><ol class="toc-child"><li class="toc-item toc-level-6"><a class="toc-link" href="#%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%86%85%E6%A0%B8"><span class="toc-number">1.1.1.</span> <span class="toc-text">操作系统内核</span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#Rings"><span class="toc-number">1.1.2.</span> <span class="toc-text">Rings</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%8A%B6%E6%80%81%E5%88%87%E6%8D%A2"><span class="toc-number">1.2.</span> <span class="toc-text">状态切换</span></a><ol class="toc-child"><li class="toc-item toc-level-6"><a class="toc-link" href="#user-space-to-kernel-space-%EF%BC%88%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8%EF%BC%89"><span class="toc-number">1.2.1.</span> <span class="toc-text">user space to kernel space （系统调用）</span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#kernel-space-to-user-space"><span class="toc-number">1.2.2.</span> <span class="toc-text">kernel space to user space</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BF%9B%E7%A8%8B%E6%9D%83%E9%99%90%E7%AE%A1%E7%90%86"><span class="toc-number">1.3.</span> <span class="toc-text">进程权限管理</span></a><ol class="toc-child"><li class="toc-item toc-level-6"><a class="toc-link" href="#%E8%BF%9B%E7%A8%8B%E6%8F%8F%E8%BF%B0%E7%AC%A6"><span class="toc-number">1.3.1.</span> <span class="toc-text">进程描述符</span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#%E8%BF%9B%E7%A8%8B%E6%9D%83%E9%99%90%E5%87%AD%E8%AF%81%EF%BC%88credential%EF%BC%89"><span class="toc-number">1.3.2.</span> <span class="toc-text">进程权限凭证（credential）</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BF%9B%E7%A8%8B%E6%9D%83%E9%99%90%E6%94%B9%E5%8F%98"><span class="toc-number">1.4.</span> <span class="toc-text">进程权限改变</span></a><ol class="toc-child"><li class="toc-item toc-level-6"><a class="toc-link" href="#Loadable-Kernel-Module%EF%BC%88%E5%8F%AF%E5%8A%A0%E8%BD%BD%E5%86%85%E6%A0%B8%E6%A8%A1%E5%9D%97%EF%BC%89-LKMS"><span class="toc-number">1.4.1.</span> <span class="toc-text">Loadable Kernel Module（可加载内核模块）-&gt;LKMS</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%86%85%E6%A0%B8%E4%BA%A4%E4%BA%92"><span class="toc-number">1.5.</span> <span class="toc-text">内核交互</span></a><ol class="toc-child"><li class="toc-item toc-level-6"><a class="toc-link" href="#%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8"><span class="toc-number">1.5.1.</span> <span class="toc-text">系统调用</span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#ioctl"><span class="toc-number">1.5.2.</span> <span class="toc-text">ioctl</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B8%B8%E8%A7%81%E5%86%85%E6%A0%B8%E6%80%81%E5%87%BD%E6%95%B0"><span class="toc-number">1.6.</span> <span class="toc-text">常见内核态函数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%86%85%E6%A0%B8pwn%E4%B8%AD%E7%9B%B8%E5%85%B3%E6%96%87%E4%BB%B6"><span class="toc-number">1.7.</span> <span class="toc-text">内核pwn中相关文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BF%9C%E7%A8%8B%E9%80%9A%E7%94%A8%E8%84%9A%E6%9C%AC%EF%BC%9A"><span class="toc-number">1.8.</span> <span class="toc-text">远程通用脚本：</span></a></li></ol></li></ol></div></div><footer><nobr><span class="icp-title">ICP</span><a class="icp-content" target="_blank" rel="noopener" href="https://beian.miit.gov.cn/">赣ICP备2026006738号</a></nobr><br><nobr>构建自 <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> 使用主题 <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr> 主题作者 <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr><wbr><nobr> 构建时间<script>const buildTime = new Date("2026-04-21T15:51:29.512Z");
+document.write(' ' + buildTime.toLocaleString());</script></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body></html>
